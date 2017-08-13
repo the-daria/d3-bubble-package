@@ -1,0 +1,89 @@
+{
+  "name": "cars",
+  "children": [
+    {
+      "name": "BMW",
+      "children": [
+        {
+          "name": "Sedan",
+          "children": [
+            {
+              "name": "M5 Sedan",
+              "size": 3938
+            },
+            {
+              "name": "M3 Sedan",
+              "size": 3812
+            },
+            {
+              "name": "M760Li",
+              "size": 6714
+            },
+            {
+              "name": "7 Series Sedan",
+              "size": 743
+            },
+            {
+              "name": "5 Series Sedan",
+              "size": 743
+            },
+            {
+              "name": "3 Series Sedan",
+              "size": 743
+            }
+          ]
+        },
+        {
+          "name": "Sports Activity Coupe",
+          "children": [
+            {
+              "name": "X4",
+              "size": 3534
+            },
+            {
+              "name": "X4 M40i",
+              "size": 5731
+            },
+            {
+              "name": "X6",
+              "size": 7840
+            },
+            {
+              "name": "X6 M",
+              "size": 5914
+            }
+          ]
+        },
+        {
+          "name": "Coupe",
+          "children": [
+            {
+              "name": "2 Series Coupé",
+              "size": 3938
+            },
+            {
+              "name": "M240i Coupé",
+              "size": 3812
+            },
+            {
+              "name": "4 Series Coupé",
+              "size": 6714
+            },
+            {
+              "name": "4 Series Gran Coupé",
+              "size": 743
+            },
+            {
+              "name": "5 Series Sedan",
+              "size": 743
+            },
+            {
+              "name": "3 Series Sedan",
+              "size": 743
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

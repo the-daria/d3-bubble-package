@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bubble Package</title>
+    <meta charset="utf-8">
+</head>
+<body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+    const SIZES = {
+        WIDTH: 960,
+        HEIGHT: 600,
+        PADDING: 5,
+        STRENGTH_LEVEL: 1,
+        ITERATIONS_LEVEL: 1
+    };
+    // Determine color for each node
+    const colorScheme = d3.scaleOrdinal(d3.schemeCategory20);
+    // Change position of the nodes according with their coordinates
+    const ticked = () => nodes.attr('transform', d => `translate(${d.x},${d.y})`);
+    // Flatten all children
+    const flatten = root => {
+        const children = [];
+
+        // Recursive function
+        function flattenChildren(name, node) {
+            if (node.children) node.children.map(child => flattenChildren(node.name, child));
+            else children.push({parent: name, name: node.name, value: node.size});
+        }
+
+        // Call flatten for root node
+        flattenChildren(null, root);
+        return {children};
+    };
+    // Create pack layout
+    const pack = d3.pack().size([SIZES.WIDTH, SIZES.HEIGHT]);
+    // Create collide force with custom strength and iterations levels
+    const force = d3.forceCollide(d => d.r + SIZES.PADDING)
+        .strength(SIZES.STRENGTH_LEVEL)
+        .iterations(SIZES.ITERATIONS_LEVEL);
+    // Create collide force simulation
+    const simulation = d3.forceSimulation()
+        .force('charge', force)
+        .force('x', d3.forceX(SIZES.WIDTH / 2))
+        .force('y', d3.forceY(SIZES.HEIGHT / 2))
+        .on('tick', ticked);
+    // Create svg element
+    const svg = d3.select('body').append('svg')
+        .attr('width', SIZES.WIDTH)
+        .attr('height', SIZES.HEIGHT)
+        .attr('class', 'bubble-layout');
+    // Select all nodes
+    let nodes = svg.selectAll('.node');
+    // Fetch data
+    d3.json('data.json', (error, data) => {
+        if (error) throw error;
+        // SET r, x, y values according with value (custom field size) param
+        // SUM determine field that will be used for for calculating coordinates and r
+        const root = d3.hierarchy(flatten(data)) // add height depth parent
+            .sum(d => d.value); // add value from defined field or by defined rules
+        // Apply bubble pack that has been created before
+        pack(root); // add x y for center and r to all objects
+        // Apply force simulation to flatten children
+        // Set nodes
+        nodes = nodes
+            .data(root.children)
+            .enter()
+            .append('g')
+            .attr('class', 'node')
+            .call(d3.drag().on('drag', d => {
+                console.log('drag', d)
+            }));
+        // Append circle to each node
+        nodes.append('circle')
+            .attr('r', d => d.r)
+            .style('fill', d => colorScheme(d.data.parent)); // decorate same categories by the same color from selected color scheme
+        // Add title to node
+        nodes.append('text')
+            .attr('dy', '.3em')
+            .style('text-anchor', 'middle')
+            .text(d => d.data.name.substring(0, d.r / 3)); // ???
+
+        simulation.nodes(root.children);
+    });
+</script>
+</body>
+</html>
