@@ -2,34 +2,52 @@
 <html>
 <head>
     <title>Bubble Package</title>
-    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <style>
+        circle {
+            cursor: pointer;
+        }
+
+        #content {
+            width: 70%;
+            float: left;
+            height: 100%;
+        }
+
+        #preview {
+            height: 100%;
+            width: 30%;
+            float: right;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
 </head>
 <body>
-<style>
-    circle {
-        cursor: pointer;
-    }
-</style>
-<script src="https://d3js.org/d3.v4.min.js"></script>
+<div>
+    <div id="content">
+        <svg id="bubble-package"></svg>
+    </div>
+    <div id="preview"></div>
+</div>
 <script>
     const SIZES = {
-        WIDTH: 960,
-        HEIGHT: 600,
         PADDING: 5,
         STRENGTH_LEVEL: 0.1,
         ITERATIONS_LEVEL: 1,
         ALPHA_LEVEL: 0.05,
-        STROKE_WIDTH: 3
+        STROKE_WIDTH: 4
     };
     // Create svg element
-    const svg = d3.select('body').append('svg');
+    const svg = d3.select(document.getElementById('bubble-package'));
+    const width = window.outerWidth * 0.7;
+    const height = window.outerHeight * 0.9;
     // Determine color from d3 default color category
-    const colorScheme = d3.scaleOrdinal(d3.schemeCategory20);
+    const colorScheme = d3.scaleOrdinal(d3.schemeCategory10);
     // Change position of the nodes according with their coordinates
     const ticked = () => nodes.attr('transform', d => `translate(${d.x},${d.y})`);
 
     // Create pack layout
-    const pack = d3.pack().size([SIZES.WIDTH * 0.8, SIZES.HEIGHT * 0.8]);
+    const pack = d3.pack().size([width * 0.8, height * 0.8]);
 
     // Create collide force with custom strength and iterations levels
     const force = d3.forceCollide(d => d.r + SIZES.PADDING)
@@ -39,8 +57,8 @@
     // Create collide force simulation
     const simulation = d3.forceSimulation()
         .force('center', force)
-        .force('x', d3.forceX(SIZES.WIDTH / 2))
-        .force('y', d3.forceY(SIZES.HEIGHT / 2))
+        .force('x', d3.forceX(width / 2))
+        .force('y', d3.forceY(height / 2))
         .on('tick', ticked);
 
     let nodes = svg.selectAll('.node');
@@ -50,9 +68,11 @@
         const children = [];
 
         // Recursive function
-        function flattenChildren(name, node) {
-            if (node.children) node.children.map(child => flattenChildren(node.name, child));
-            else children.push({parent: name, name: node.name, value: node.price});
+        function flattenChildren(name, node, category) {
+            const currentCategory = name === 'cars' ? node.name : category;
+            console.log('category', category, node.name, node.category);
+            if (node.children) node.children.map(child => flattenChildren(node.name, child, currentCategory));
+            else children.push(Object.assign(node, {parent: name, value: node.price, category: currentCategory}));
         }
 
         // Call flatten for root node
@@ -60,11 +80,12 @@
         return {children};
     }
 
-    // stops the force auto positioning before you start dragging
+    // Stops the force auto positioning before you start dragging
     function dragStart() {
         simulation.stop()
     }
 
+    // Performs coordinate changes for draggable element and restart force
     function drag(d) {
         d.x += d3.event.dx;
         d.y += d3.event.dy;
@@ -76,17 +97,29 @@
         simulation.alpha(SIZES.ALPHA_LEVEL).restart();
     }
 
+    function fillPreview(d) {
+        const element = d3.select(document.getElementById('preview'));
+        const data = `<h1>${d.data.category}</h1>` +
+            `<div>Type: <span>${d.data.parent}</span></div>` +
+            `<div>Model: <span>${d.data.name}</span></div>` +
+            `<div>Fuel: <span>${d.data.fuel}</span></div>` +
+            `<div>Max Speed: <span>${d.data.fuel}</span></div>` +
+            `<div>Official Price: <span>${d.data.price}$</span></div>`;
 
-    svg.attr('width', SIZES.WIDTH)
-        .attr('height', SIZES.HEIGHT)
+        element.html(data);
+        element.selectAll('span').style('color', colorScheme(d.data.category));
+    }
+
+    // Set sizes to svg
+    svg.attr('width', width)
+        .attr('height', height)
         .attr('class', 'bubble-layout');
 
     // Fetch data
     d3.json('data.json', (error, data) => {
         if (error) throw error;
 
-        const root = d3.hierarchy(flatten(data))
-            .sum(d => d.value);
+        const root = d3.hierarchy(flatten(data)).sum(d => d.value);
 
         pack(root);
 
@@ -97,33 +130,17 @@
             .attr('class', 'node')
             .call(d3.drag()
                 .on('start', dragStart)
-                .on('drag', drag)
-            );
+                .on('drag', drag));
 
         nodes.append('circle')
             .attr('r', d => d.r)
             .style('stroke-width', SIZES.STROKE_WIDTH)
-            .style('stroke', d => colorScheme(d.data.parent)); // decorate same categories by the same color from selected color scheme
+            .style('stroke', d => colorScheme(d.data.category)); // decorate same categories by the same color from selected color scheme
 
         // Append text on mouse in
         nodes
-            .on('mouseenter', function () {
-                const el = d3.select(this);
-
-                el.style('stroke', d => colorScheme(d.data.parent));
-
-                el.append('text')
-                    .attr('x', d => -d.r + SIZES.PADDING)
-                    .text(d => `${d.data.name}`);
-                el.append('text')
-                    .attr('x', d => -d.r + SIZES.PADDING)
-                    .attr('y', 16)
-                    .text(d => `${d.data.value}$`);
-
-            })
-            .on('mouseleave', function () {
-                d3.select(this).selectAll('text').remove();
-            });
+            .on('mouseenter', d => fillPreview(d))
+            .on('mouseleave', () => d3.select(document.getElementById('preview')).html(''));
 
         // Apply force simulation to flatten children
         simulation.nodes(root.children);
