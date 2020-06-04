@@ -4,4 +4,4 @@ Sample of d3.js v.4 pack layout usage with bubbles implementation and force simu
 
 # DEMO
  
-[Cars To Prices Representation](https://daria-lym.github.io/d3-bubble-package)
+[Cars To Prices Representation](https://the-daria.github.io/d3-bubble-package)
